@@ -1,0 +1,154 @@
+---------------------
+MySQL Login
+---------------------
+
+mysql -uroot -pcloudera
+
+show databases;
+
+use retail_db;
+
+show Tables;
+
+select * from departments;
+
+
+---------------------
+Sqoop Login
+---------------------
+
+sqoop help
+
+
+sqoop import \
+    --connect jdbc:mysql://quickstart:3306/retail_db \
+    --username=retail_dba \
+    --password=cloudera \
+    --table departments \
+    --m 1
+
+
+--------------------------------------------------------
+Import Data from RDBMS to HDFS Target Directory 
+--------------------------------------------------------
+
+sqoop import \
+    --connect jdbc:mysql://quickstart:3306/retail_db \
+    --username=retail_dba \
+    --password=cloudera \
+    --table departments \
+    --m 1 \
+    --target-dir /user/hdfs/dept
+
+
+--------------------------------------------------------
+Import all Tables from RDBMS to HDFS Target Directory 
+--------------------------------------------------------
+
+sqoop import-all-tables \
+    --connect jdbc:mysql://quickstart:3306/retail_db \
+    --username=retail_dba \
+    --password=cloudera \
+    --m 1 \
+    --target-dir /user/hdfs/dept
+
+
+--------------------------------------------------------
+Import Subset Data from RDBMS to HDFS Target Directory 
+--------------------------------------------------------
+
+sqoop import \
+    --connect jdbc:mysql://quickstart:3306/retail_db \
+    --username=retail_dba \
+    --password=cloudera \
+    --table departments \
+    --m 1 \
+    --where "department_id in(2,3,5,6)" \
+    --target-dir /user/hdfs/dept_subset
+
+
+----------------------------------------------------------------------
+Import Subset Data from RDBMS to HDFS Target Directory Using SQL Query
+----------------------------------------------------------------------
+
+sqoop import \
+    --connect jdbc:mysql://quickstart:3306/retail_db \
+    --username=retail_dba \
+    --password=cloudera \
+    --m 1 \
+    --query "select * from departments where department_id in(3,5,7) and \$CONDITIONS" \
+    --target-dir /user/hdfs/dept_subset_query
+
+
+
+-------------------- 
+Incremental Import 
+--------------------
+
+insert into departments(department_id , department_name) values(8,'Cricket');
+
+sqoop import \
+    --connect jdbc:mysql://quickstart:3306/retail_db \
+    --username=retail_dba \
+    --password=cloudera \
+    --table departments --m 1 \
+    --target-dir /user/hdfs/dept_incr 
+    --incremental append \
+    --check-column department_id \
+    --last-value 7
+
+
+------------------------------- 
+Import Data from RDBMS to Hive 
+-------------------------------
+
+sqoop import \
+    --connect jdbc:mysql://quickstart:3306/retail_db \
+    --username=retail_dba \
+    --password=cloudera \
+    --table departments \
+    --m 1 \
+    --warehouse-dir=/user/hive/warehouse \
+    --fields-terminated-by ',' \
+    --hive-import
+
+
+
+------------------------------- 
+Export Data from HDFS to RDBMS 
+--------------------------------
+
+CREATE TABLE departments_new ( 
+   department_id INT NOT NULL PRIMARY KEY, 
+   department_name VARCHAR(20));
+
+
+sqoop export \
+--connect jdbc:mysql://quickstart:3306/retail_db \
+--username=retail_dba \
+--password=cloudera \
+--table departments_new \
+--export-dir /user/hdfs/dept
+
+
+Select * from departments_new;
+
+
+------------------------------- 
+Export Data from Hive to RDBMS 
+-------------------------------
+
+CREATE TABLE departments_hive ( 
+   department_id INT NOT NULL PRIMARY KEY, 
+   department_name VARCHAR(20));
+
+
+sqoop export \
+--connect jdbc:mysql://quickstart:3306/retail_db \
+--username=retail_dba \
+--password=cloudera \
+--table departments_hive \
+--export-dir /user/hive/warehouse/departments
+
+
+Select * from departments_hive;

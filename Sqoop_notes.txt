@@ -1,0 +1,182 @@
+Sqoop is a tool designed to transfer data between Hadoop and relational database servers. 
+
+It is used to IMPORT data from relational databases such as MySQL, Oracle to Hadoop HDFS and EXPORT from Hadoop file system to relational databases
+
+ 
+         SQOOP 
+RDBMS <---------> hDFS
+         SQOOP
+
+To use Hadoop for analytics requires loading data into Hadoop clusters and processing it in conjunction with data that resides on enterprise application servers and databases. Loading GBs and TBs of data into HDFS from production databases or accessing it from map reduce applications is a challenging task. While doing so, we have to consider things like data consistency, overhead of running these jobs on production systems and at the end if this process would be efficient or not. 
+Using batch scripts to load data is an inefficient way to go with.
+
+Typical scenario, we want to process data stored in relational Database Management Systems with Map reduce capabilities. E.g. we have say, Legacy data or Lookup Tables etc. to process. Once solution we can think about is directly reading data from RDBMS tables in your mapper and the process the same.
+
+But this would lead to the equivalent of a distributed denial of service (DDoS) attack on your RDBMS. So in practice, DON'T DO IT.
+
+So what could be the possible solution to process data stored in relational database using Map reduce? Answer is importing that data on HDFS!!
+
+Sqoop is nothing but SQL to Hadoop. Sqoop allows users to import data from their relational databases into HDFS and vice versa. Sqoop is an open source tool written at Cloudera .It allows us to
+
+•Import one table
+•Import complete database
+•Import selected tables
+•Import selected columns from a particular table
+•Filter out certain rows from certain table etc
+
+Sqoop uses Map reduce to fetch data from RDBMS and stores that on HDFS. While doing so, it throttles the number of mappers accessing data on RDBMS to avoid DDoS. By default it uses four mappers but this value is configurable. It's recommended not to set higher number of mappers, as it may lead to consuming all spool space of the source database.
+
+Sqoop internally uses JDBC interface so it should work with any JDBC compatible database
+
+
+Available commands:
+
+codegen  Generate code to interact with database records 
+create-hive-table Import a table definition into Hive 
+eval Evaluate a SQL statement and display the results 
+export Export an HDFS directory to a database table 
+help List available commands 
+import Import a table from a database to HDFS 
+import-all-tables Import tables from a database to HDFS 
+list-databases List available databases on a server 
+list-tables List available tables in a database 
+version Display version information 
+
+ 
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/supreet --username root --password cloudera --table kite;
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/supreet --username root --password cloudera --table kite1 --target-dir dd;
+
+[cloudera@quickstart ~]$ sqoop --options-file /home/cloudera/Desktop/zz --table demo1;
+[cloudera@quickstart ~]$ sqoop --options-file /home/cloudera/Desktop/zz --table demo1 --target-dir /user/cloudera/ex;
+[cloudera@quickstart ~]$ sqoop --options-file /home/cloudera/Desktop/zz --table demo1;
+
+
+[cloudera@quickstart ~]$ sqoop --options-file /home/cloudera/Desktop/zz --table demo1 --target-dir /user/cloudera/ex;
+[cloudera@quickstart ~]$ sqoop --options-file /home/cloudera/Desktop/zz --table demo1 --target-dir /user/cloudera/ex;
+
+[cloudera@quickstart ~]$ sqoop create-hive-table --connect jdbc:mysql://localhost/supreet --username root --password cloudera --table demo1 --hive-table emps --mysql-delimiters;
+[cloudera@quickstart ~]$ sqoop --options-file /home/cloudera/Desktop/zz --table demo1 --hive-table emps --hive-import;
+[cloudera@quickstart ~]$ sqoop --options-file /home/cloudera/Desktop/zz --table demo2 --hive-table emps --hive-import;
+
+
+If you are using the import-all-tables, it is mandatory that every table in that database must have a primary key field.
+
+[cloudera@quickstart ~]$ sqoop import-all-tables --connect jdbc:mysql://localhost/D2 --username root --password cloudera --warehouse-dir SKY;
+[cloudera@quickstart ~]$ sqoop import-all-tables --connect jdbc:mysql://localhost/supreet --username root --password cloudera --warehouse-dir '/user/cloudera/testdir1';
+
+Boundary Queries:
+
+sqoop import --connect jdbc:mysql://localhost/mysql --username root -P --table Employee --m 1 --target-dir /user/cloudera/sqoopdir1 --boundary-query 'select * from Employee where id =1';
+
+
+sqoop import --connect "jdbc:mysql://quickstart.cloudera:3306/retail_db" \
+--username "root" --password "cloudera" \
+--mapreduce-job-name "This is our first sqoop import" \
+--query "SELECT * FROM customers WHERE \$CONDITIONS" \
+--hive-import \
+--create-hive-table \
+--fields-terminated-by ',' \
+--hive-table sqoop_db.customers \
+--split-by "customer_id" \
+--target-dir "/user/cloudera/customers"
+
+
+https://stackoverflow.com/questions/22969342/sqoop-incremental-import (Incremental Append & modified)
+
+
+
+
+Importing Data in Compressed Format 
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/supreet --username root --password cloudera --table kite --compress;
+
+by default gzip compression
+
+-------------------------------------------------
+
+--compress --compression-codec org.apache.hadoop.io.compress.BZip2Codec
+------------------------------------------------------------------------------------
+
+
+Performance Optimization by controlling parallelism
+To set the number of mappers, we can execute following commands
+
+ sqoop import \
+ --connect jdbc:mysql://hostname/database_name \
+ --username user1 \
+ --password pwd \
+ --table student \
+ --num-mappers 8
+
+----------------------------------------------------------------
+
+Atomic Export
+
+We have learned in basic database concepts about atomicity which means do a complete job or do nothing. Similarly, if you are exporting data using Sqoop to a table which is very important from the application point of view and you want make sure that sqoop should export all data present in HDFS, then you can use staging-table option. Here, we will mention a staging table where sqoop will export all its data and it all data export is successful then only it should write that data in actual table. 
+
+Syntax for the same is given below
+
+ $ sqoop export \
+ --connect jdbc:mysql://hostname/database_name \
+ --username user1 \
+ --password pwd \
+ -- export-dir /user/hive/warehouse/student
+ --staging-table staging_student
+
+
+//Script file
+import
+--connect
+jdbc:mysql://localhost/meenu
+--username
+root
+--password
+cloudera
+
+Incremental Import
+
+
+
+[cloudera@quickstart ~]$ sqoop list-databases --connect jdbc:mysql://localhost --username root --password cloudera;
+
+[cloudera@quickstart ~]$ sqoop list-tables --connect jdbc:mysql://localhost/D2 --username root --password cloudera;
+
+sqoop eval --connect jdbc:mysql://localhost/D2 --username root --password cloudera --query "select * from B1 limit 1";
+
+
+
+
+[cloudera@quickstart ~]$ sqoop import --connect jdbc:mysql://localhost/D2 --username root --password cloudera --table B2 --m 1 --where "id =1";
+
+
+zz
+import 
+--connect
+jdbc:mysql://localhost:3306/supreet
+--username
+root 
+--password
+cloudera
+
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

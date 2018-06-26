@@ -1,0 +1,9 @@
+hadoop fs -mkdir /user/cloudera/suraj1;
+hadoop fs -ls;
+ sqoop--options-file /home/cloudera/Desktop/import_script --table rcm --warehouse-dir /user/cloudera/suraj1;
+
+sqoop import --connect jdbc:mysql://localhost/Suraj --username root --password cloudera --table rcm
+
+sqoop create-hive-table --connect jdbc:mysql://localhost/Suraj --username root --password cloudera --table rcm --hive
+
+sqoop export --connect jdbc:mysql://localhost:3306/Suraj --username root --password cloudera --table rcm  --export-dir  '/user/cloera/suraj1/rcm/part-m-00000';
